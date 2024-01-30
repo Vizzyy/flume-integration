@@ -1,6 +1,7 @@
 from credentials import *
 import requests
 import json
+from datetime import datetime
 
 BASE_URL = 'https://api.flumewater.com'
 headers = {
@@ -77,8 +78,15 @@ def get_devices():
     bearer = headers.copy()
     bearer['Authorization'] = f'Bearer {access_token}'
     response = requests.get(url, headers=bearer)
-    response = json.loads(response.text)
-    return response
+    return json.loads(response.text)
+
+
+def query_data(user_id, device_id, payload):
+    url = f'{BASE_URL}/users/{user_id}/devices/{device_id}/query'
+    bearer = headers.copy()
+    bearer['Authorization'] = f'Bearer {access_token}'
+    response = requests.request("POST", url, json=payload, headers=bearer)
+    return json.loads(response.text)
 
 
 if not read_from_tokens_file() or not check_token_valid():
@@ -91,4 +99,21 @@ if not read_from_tokens_file() or not check_token_valid():
 # print(f'access_token: {access_token}')
 # print(f'refresh_token: {refresh_token}')
 
-print(get_devices())
+devices = get_devices()
+print(devices)
+
+query = {
+  "queries": [
+    {
+      "bucket": "MON",
+      "since_datetime": f"{datetime.now().year}-{datetime.now().month:02d}-01 00:00:00",
+      "operation": "sum",
+      "request_id": "12345"
+    }
+  ]
+}
+
+print(query)
+
+print(query_data(devices['data'][0]['user_id'], devices['data'][0]['id'], query))
+
